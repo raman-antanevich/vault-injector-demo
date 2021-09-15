@@ -2,9 +2,17 @@ BASEDIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOCAL_IP := $(shell ip route get 1.1.1.1 | sed -n 's/.*src \([0-9.]\+\).*/\1/p')
 
 
+up: clean init vault-up minikube-up
+
+down: vault-down minikube-down clean
+
 init:
 	terraform -chdir="${BASEDIR}/vault" init
 	terraform -chdir="${BASEDIR}/injector" init
+
+clean:
+	find ${BASEDIR} -name *.tfstate* -exec rm -f {} \;
+	rm -f ${BASEDIR}/nohup.out
 
 vault-up:
 	nohup vault server \
