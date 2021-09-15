@@ -21,7 +21,7 @@ vault-up:
 		-dev-listen-address 0.0.0.0:8200 &
 
 vault-down:
-	pkill vault
+	pkill vault || echo 1
 
 vault-provision:
 	terraform -chdir="${BASEDIR}/vault" apply \
