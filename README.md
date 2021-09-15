@@ -22,32 +22,73 @@ This repository has been created to help with demonstrating opportunities of Vau
 
 ## Walkthrough
 
-Initialy, we should run the environment to deploy Vault Injector.
+P.S. I will use `make` everywhere, but you can find all command in the `Makefile`.
+
+Initialy, we should run the environment.
 
 ```sh
-terraform -chdir="./vault" init
-terraform -chdir="./injector" init
-
-nohup vault server \
-  -dev \
-  -dev-root-token-id="root" \
-  -dev-listen-address="0.0.0.0:8200" &
-  
-minikube start \
-  --nodes 1 \
-  --cpus 4 \
-  --memory 8192 \
-  --driver virtualbox \
-  --apiserver-port 8443 \
-  --kubernetes-version 1.19.12 \
-  --profile vault
+make up
 ```
 
-Now we have running Kubernetes cluster (minikube) and Vault. We need the following stuff in Vault:
- * Vault policies:
-   * `backend` - create/update auth backend
-   * `secret` - allow access to secrets
- * Vault AppRole with attached `backend` policy
+Now we have running Kubernetes cluster (minikube) and Vault.
+The next step is creating Vault policies, AppRole to create/setup Kubernetes auth backed and example secrets which we will retrieve later. All settings you can find in `vault/`.
+
+```
+make vault-provision
+```
+
+We're ready to deploy Vault Injector. All code locates in `injector/`.
+
+```
+make injector-provision
+```
+
+Great! Vault Injector is deployed successfully. But our containers won't be able to retrieve secrets from Vault, because we don't have kubernetes roles in Vault. Firstly, we need to uncomment code in `vault/vault_kubernetes.tf` and after that we should apply changes.
+
+```
+make vault-provision
+```
+
+That's it. We can retrieve secrets from Vault simple using Kubernetes annotations. All example you can find in `manifests/`.
+
+To run a simple app:
+```
+kubectl apply -f manifests/simple-app.yml
+```
+
+To run a simple app without `vault.hashicorp.com/agent-inject-template`:
+```
+kubectl apply -f manifests/without-template.yml
+```
+
+To run a simple app with `vault.hashicorp.com/agent-inject-template`:
+```
+kubectl apply -f manifests/with-template.yml
+```
+
+To run a simple app with 2 secrets:
+```
+kubectl apply -f manifests/two-secrets.yml
+```
+
+To run a simple app in another namespace:
+```
+kubectl apply -f manifests/other-stage.yaml
+```
+
+To run a simple app with several replicas:
+```
+kubectl apply -f manifests/many-replicas.yml
+```
+
+Let's try to use disallow ServiceAccount and Namespace:
+```
+kubectl apply -f manifests/wrong-sa.yml
+
+kubectl apply -f manifests/wrong-ns.yml
+```
+
+The end.
 
 
 
